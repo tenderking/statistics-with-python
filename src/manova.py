@@ -8,8 +8,8 @@ def manova(X, Y):
     Y (numpy.ndarray): A 2D array of shape (n, q) where n is the number of samples and q is the number of response variables.
 
     Returns:
-    float: The F-statistic for the MANOVA.
-    float: The p-value for the MANOVA.
+    float: The T-statistic for the MANOVA.
+    float: The c-squared for the MANOVA.
     """
     X_mat = X.values
     Y_mat = Y.values
@@ -36,4 +36,17 @@ def manova(X, Y):
     print("Y: ",Y_mat.shape)
     t_squared = mu_diff.T @ np.linalg.inv((1/n1+1/n2)*s_pooled) @ mu_diff
     c_squared = (n1+n2-2)*(p-1)/(n-p)*f.ppf(0.95, p-1, n-p)
-    return t_squared, c_squared
+
+    # Calculating simultaneous confidence intervals for the differences in mean components
+    S_diag = np.diag(np.diag(s_pooled))
+    print("S_diag: ",S_diag)
+    # create a 2x4 matrix of zeros
+    sim_ci = np.zeros((2,p))
+    
+    for j in range(p):
+        upper_bound = mu_diff[j] + np.sqrt(c_squared) + np.sqrt((1 / n1 + 1 / n2) * S_diag[j, j])
+        lower_bound = mu_diff[j] - np.sqrt(c_squared) - np.sqrt((1 / n1 + 1 / n2) * S_diag[j, j])
+        sim_ci[0, j] = upper_bound  # populate upper bound
+        sim_ci[1, j] = lower_bound  # populate lower bound (one element ahead)
+    
+    return t_squared, c_squared, sim_ci
